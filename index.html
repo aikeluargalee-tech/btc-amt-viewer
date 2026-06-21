@@ -31,6 +31,7 @@ h2{font-size:14px;color:#8b949e;margin:16px 0 6px;text-transform:uppercase;lette
 .zone-item .zl{font-size:10px;color:#8b949e;margin-bottom:2px}
 .zone-item .zv{font-size:18px;font-weight:700;color:#f0f6fc}
 .timeframe{text-align:center;font-size:11px;color:#484f58;margin-bottom:8px;padding:4px 0}
+.bottomline{margin:10px 0 14px;font-size:13px;line-height:1.55;color:#8b949e;padding:8px 0;border-bottom:1px solid #21262d}
 .fp-header{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#484f58;border-bottom:1px solid #21262d}
 .fp-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;border-bottom:1px solid #0d1117}
 .fp-row.buyer-dominant{background:#0d3320}
@@ -139,6 +140,9 @@ function render(d) {
     const trades = f.trade_count ? f.trade_count + ' trades' : '';
     html += '<div class="timeframe">15-Minute Candle · ' + tf + ' · ' + kind + (trades ? ' · ' + trades : '') + '</div>';
   }
+
+  // Bottomline
+  html += '<div class="bottomline">' + (d.bottomline || '') + '</div>';
 
   // Footprint levels
   const levels = f.levels || [];

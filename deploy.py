@@ -82,6 +82,70 @@ def trim_feed(feed):
         "funding_rate": feed.get("funding", {}).get("rate"),
     }
 
+    data["bottomline"] = generate_bottomline(data)
+    return data
+
+
+def generate_bottomline(d):
+    """Observational summary — describes what happened, never prescribes."""
+    fp = d.get("footprint", {})
+    st = d.get("status", {})
+    net = fp.get("net_delta", 0) or 0
+    flip = fp.get("delta_flip")
+    levels = fp.get("levels", [])
+    funding = d.get("funding_rate")
+
+    # Sentence 1 — who controlled
+    if st.get("pressure") in ("HIGH", "ELEVATED") and st.get("side"):
+        who = "Sellers" if st["side"] == "seller" else "Buyers"
+        s1 = f"{who} dominated this candle."
+    elif net > 0:
+        s1 = "Buyers had the edge this candle."
+    elif net < 0:
+        s1 = "Sellers had the edge this candle."
+    else:
+        s1 = "Buyers and sellers were evenly matched this candle."
+
+    # Sentence 2 — evidence
+    abs_net = abs(net)
+    direction_word = "buyers" if net > 0 else "sellers"
+    s2 = f"Net flow was {abs_net:.1f} BTC toward {direction_word}."
+
+    if levels:
+        buyer_levels = sum(1 for l in levels if l.get("buy", 0) > l.get("sell", 0))
+        total = len(levels)
+        if buyer_levels > total * 0.7:
+            s2 += " Most price levels showed buyer dominance."
+        elif buyer_levels < total * 0.3:
+            s2 += " Most price levels showed seller dominance."
+        else:
+            s2 += " Price levels were mixed."
+
+    if flip is True:
+        s2 += " Delta flipped bullish at candle close."
+    elif flip is False:
+        s2 += " Delta flipped bearish at candle close."
+
+    if funding is not None:
+        if funding > 0.0005:
+            s2 += f" Funding is elevated ({(funding*100):.4f}%), suggesting longs are crowded."
+        elif funding < -0.0005:
+            s2 += f" Funding is negative ({(funding*100):.4f}%), suggesting shorts are crowded."
+
+    # Sentence 3 — what to watch
+    if st.get("pressure") == "HIGH":
+        if st.get("side") == "seller":
+            s3 = "Watch whether buyers step in on the next candle to defend current levels, or whether sellers continue to press."
+        else:
+            s3 = "Watch whether buyers maintain control on the next candle, or whether sellers push back."
+    elif net > 0:
+        s3 = "Watch whether buyers can hold these levels on the next candle."
+    else:
+        s3 = "Watch whether buyers step in on the next candle, or whether selling continues."
+
+    return f"{s1} {s2} {s3}"
+
+
 def deploy():
     feed = load_feed()
     data = trim_feed(feed)
