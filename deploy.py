@@ -48,7 +48,7 @@ def trim_feed(feed):
 
     large_prints = footprint.get("large_prints", [])[:3]
 
-    return {
+    data = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "price":        feed.get("btc_spot", 0),
         "change_24h_pct": feed.get("change_24h_pct", 0),
