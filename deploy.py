@@ -160,7 +160,7 @@ def deploy():
 
     os.chdir(REPO_DIR)
 
-    subprocess.run(["git", "add", "data.json"], check=True, capture_output=True)
+    subprocess.run(["git", "add", "data.json", "deploy.py", "index.html"], check=True, capture_output=True)
 
     # Amend commit if there's one, or create initial
     result = subprocess.run(
