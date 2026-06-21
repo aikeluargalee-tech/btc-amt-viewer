@@ -32,6 +32,17 @@ h2{font-size:14px;color:#8b949e;margin:16px 0 6px;text-transform:uppercase;lette
 .zone-item .zv{font-size:18px;font-weight:700;color:#f0f6fc}
 .timeframe{text-align:center;font-size:11px;color:#484f58;margin-bottom:8px;padding:4px 0}
 .bottomline{margin:10px 0 14px;font-size:13px;line-height:1.55;color:#8b949e;padding:8px 0;border-bottom:1px solid #21262d}
+.simple-terms{font-size:14px;line-height:1.6;color:#e6edf3;background:#161b22;border-left:3px solid #58a6ff;padding:10px 12px;margin-bottom:14px;border-radius:0 6px 6px 0}
+.verdict-card{background:#161b22;border-left:4px solid #8b949e;padding:14px 16px;margin-bottom:16px;border-radius:0 8px 8px 0}
+.verdict-label{font-size:10px;color:#484f58;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.verdict-main{font-size:22px;font-weight:700;margin-bottom:2px}
+.verdict-sub{font-size:12px;color:#8b949e;margin-bottom:2px}
+.verdict-tape{font-size:11px;color:#484f58}
+.tape-meter{position:relative;margin:0 0 18px;padding:8px 0}
+.tape-labels{display:flex;justify-content:space-between;font-size:10px;color:#484f58;margin-bottom:4px;letter-spacing:0.5px}
+.tape-bar{height:6px;background:#21262d;border-radius:3px;overflow:hidden;position:relative}
+.tape-fill{height:100%;border-radius:3px;transition:width 0.5s ease}
+.tape-marker{position:absolute;top:10px;font-size:14px;color:#f0f6fc;transform:translateX(-50%);transition:left 0.5s ease}
 .fp-header{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#484f58;border-bottom:1px solid #21262d}
 .fp-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;border-bottom:1px solid #0d1117}
 .fp-row.buyer-dominant{background:#0d3320}
@@ -47,6 +58,50 @@ h2{font-size:14px;color:#8b949e;margin:16px 0 6px;text-transform:uppercase;lette
 .print .side.buy{color:#3fb950}.print .side.sell{color:#f85149}
 .empty{color:#484f58;font-style:italic;padding:12px 0;text-align:center}
 .footer{text-align:center;margin-top:20px;padding:12px;font-size:10px;color:#21262d}
+
+/* ── Mobile responsive adjustments ── */
+@media (max-width: 400px) {
+  body{padding:8px}
+  .price{font-size:26px}
+  .verdict-main{font-size:18px}
+  .zone-item .zv{font-size:15px}
+  .fp-price{width:50px;font-size:11px}
+  .fp-nums{width:75px;font-size:9px}
+  .fp-row{font-size:11px;padding:2px 0}
+  .fp-bar{height:14px}
+  .status{font-size:13px;padding:8px 10px}
+  .bottomline{font-size:12px}
+  .simple-terms{font-size:13px;padding:8px 10px}
+  .row{font-size:12px;padding:5px 0}
+  .verdict-card{padding:10px 12px}
+  .verdict-sub{font-size:11px}
+}
+@media (max-width: 360px) {
+  body{padding:6px}
+  .price{font-size:22px}
+  .change{font-size:14px}
+  .verdict-main{font-size:16px}
+  .zone-item .zv{font-size:13px}
+  .fp-price{width:44px;font-size:10px}
+  .fp-nums{width:65px;font-size:8px}
+  .fp-row{font-size:10px;gap:3px}
+  .fp-bar{height:12px}
+  .status{font-size:12px;padding:6px 8px}
+  .bottomline{font-size:11px}
+  .simple-terms{font-size:12px;padding:6px 8px}
+  .row{font-size:11px;padding:4px 0}
+  .verdict-card{padding:8px 10px}
+}
+/* Touch targets — min 44px for interactive elements */
+.slider, button, [role="slider"], .tape-bar{cursor:pointer;min-height:44px}
+.heatmap-img{cursor:pointer}
+.fp-row{cursor:default}
+/* 4-layer TF grid — responsive box sizing */
+.tf-box{flex:1;min-width:70px;background:#0d1117;border-radius:6px;padding:8px;text-align:center;border:1px solid #21262d}
+@media (max-width: 360px){.tf-box{min-width:60px;padding:6px 4px;font-size:10px}}
+/* Prevent horizontal overflow on very small screens */
+img{max-width:100%;height:auto}
+pre, code{word-break:break-all;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -74,17 +129,107 @@ function fmt(n) {
 }
 
 function fmtPct(n) {
-  if (n == null) return '—';
+  if (n == null || isNaN(n)) return '—';
   const v = Number(n);
   return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
 }
 
 function ago(iso) {
   if (!iso) return '';
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  const diff = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
   if (diff < 60) return Math.floor(diff) + 's ago';
   if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
   return Math.floor(diff / 3600) + 'h ago';
+}
+
+function scoreSignals(d) {
+  const f = d.footprint || {};
+  const agg = d.aggression_score || {};
+  const signals = [];
+
+  // Net Delta
+  const nd = f.net_delta ?? 0;
+  signals.push({
+    name: 'Net Delta',
+    value: (nd > 0 ? '▲' : nd < 0 ? '▼' : '→') + ' ' + (nd > 0 ? 'Bullish' : nd < 0 ? 'Bearish' : 'Neutral'),
+    dir: nd > 0 ? 'bullish' : nd < 0 ? 'bearish' : 'neutral',
+    detail: nd.toFixed(1) + ' BTC'
+  });
+
+  // CVD
+  const cvd = d.cvd ?? 0;
+  signals.push({
+    name: 'CVD',
+    value: (cvd > 0 ? '▲' : cvd < 0 ? '▼' : '→') + ' ' + (cvd > 0 ? 'Bullish' : cvd < 0 ? 'Bearish' : 'Neutral'),
+    dir: cvd > 0 ? 'bullish' : cvd < 0 ? 'bearish' : 'neutral',
+    detail: fmt(cvd) + ' BTC'
+  });
+
+  // OI Change
+  const oi = d.oi_change ?? 0;
+  const oiDir = d.oi_change_dir;
+  let oiLabel = 'Neutral';
+  let oiD = 'neutral';
+  if (oiDir) {
+    if (oiDir.includes('longs entering') || oiDir.includes('shorts covering')) { oiLabel = 'Bullish'; oiD = 'bullish'; }
+    else if (oiDir.includes('shorts entering') || oiDir.includes('longs covering')) { oiLabel = 'Bearish'; oiD = 'bearish'; }
+  }
+  signals.push({
+    name: 'OI Change',
+    value: (oiD === 'bullish' ? '▲' : oiD === 'bearish' ? '▼' : '→') + ' ' + oiLabel,
+    dir: oiD,
+    detail: (oi >= 0 ? '+' : '') + oi.toFixed(2) + '%' + (oiDir ? ' (' + oiDir + ')' : '')
+  });
+
+  // Taker Ratio
+  const tr = d.taker_ratio;
+  let trDir = 'neutral', trLabel = 'Neutral';
+  if (tr != null) {
+    if (tr > 0.52) { trDir = 'bullish'; trLabel = 'Bullish'; }
+    else if (tr < 0.48) { trDir = 'bearish'; trLabel = 'Bearish'; }
+  }
+  signals.push({
+    name: 'Taker Ratio',
+    value: (trDir === 'bullish' ? '▲' : trDir === 'bearish' ? '▼' : '→') + ' ' + trLabel,
+    dir: trDir,
+    detail: tr != null ? 'Buy ' + (tr*100).toFixed(0) + '% / Sell ' + ((1-tr)*100).toFixed(0) + '%' : '—'
+  });
+
+  // Funding Rate
+  const fr = d.funding_rate;
+  let frDir = 'neutral', frLabel = 'Neutral';
+  if (fr != null) {
+    if (fr > 0.005) { frDir = 'bullish'; frLabel = 'Bullish (longs paying)'; }
+    else if (fr < -0.005) { frDir = 'bearish'; frLabel = 'Bearish (shorts paying)'; }
+  }
+  signals.push({
+    name: 'Funding',
+    value: (frDir === 'bullish' ? '▲' : frDir === 'bearish' ? '▼' : '→') + ' ' + frLabel,
+    dir: frDir,
+    detail: fr != null ? (fr*100).toFixed(4) + '%' : '—'
+  });
+
+  // Absorption
+  const abs = f.absorption_level;
+  signals.push({
+    name: 'Absorption',
+    value: abs ? (abs.dominant_side === 'sell' ? '▼ Detected at $' + fmt(abs.price) + ' (seller absorbing)' : '▲ Detected at $' + fmt(abs.price) + ' (buyer absorbing)') : '— Not detected',
+    dir: abs ? (abs.dominant_side === 'sell' ? 'bearish' : 'bullish') : 'neutral',
+    detail: abs ? '$' + fmt(abs.price) : '—'
+  });
+
+  const bearish = signals.filter(s => s.dir === 'bearish').length;
+  const bullish = signals.filter(s => s.dir === 'bullish').length;
+  const neut = signals.filter(s => s.dir === 'neutral').length;
+
+  let verdict = 'NEUTRAL';
+  if (bearish > bullish + 1) verdict = 'BEARISH BIAS';
+  else if (bullish > bearish + 1) verdict = 'BULLISH BIAS';
+
+  const aligned = Math.max(bearish, bullish);
+  const verdictColor = verdict.includes('BEARISH') ? '#f85149' : verdict.includes('BULLISH') ? '#3fb950' : '#8b949e';
+
+  return { signals, bearish, bullish, neut, verdict, aligned, verdictColor };
 }
 
 function render(d) {
@@ -96,6 +241,7 @@ function render(d) {
   const s = d.status || {};
   const f = d.footprint || {};
   const b = d.balance || {};
+  const agg = d.aggression_score || {};
   const cvd = d.cvd ?? 0;
 
   let sc = 'neutral';
@@ -112,6 +258,201 @@ function render(d) {
 
   let html = '';
 
+  // ── Top Verdict Card ──────────────────────────────────
+  const verdict = scoreSignals(d);
+  html += '<div class="verdict-card" style="border-left-color:' + verdict.verdictColor + '">';
+  html += '<div class="verdict-label">AMT VERDICT</div>';
+  html += '<div class="verdict-main" style="color:' + verdict.verdictColor + '">' + verdict.verdict + '</div>';
+  html += '<div class="verdict-sub">' + verdict.bearish + ' bearish · ' + verdict.bullish + ' bullish · ' + verdict.neut + ' neutral</div>';
+  html += '</div>';
+
+  // ── Whale Pivot Card ───────────────────────────────────
+  const wp = d.whale_pivot || {};
+  const lwp = d.last_whale_pivot;
+  // Show: active pivot, OR last pivot from history if no active signal
+  const pivotData = wp.signal ? wp : (lwp && lwp.signal ? lwp : null);
+  if (pivotData) {
+    const isActive = !!wp.signal;
+    const wpColor = pivotData.signal === 'LONG' ? '#3fb950' : '#f85149';
+    const checklist = pivotData.checklist || {};
+    const checklistKeys = Object.keys(checklist);
+    const checklistScore = checklistKeys.filter(k => checklist[k]).length;
+    const checklistTotal = checklistKeys.length;
+    const checklistLabels = {
+      at_key_level: 'At Key Level',
+      absorption_detected: 'Absorption',
+      aggression_opposing: 'Aggression Opposing',
+      delta_confirms: 'Delta Confirms'
+    };
+
+    html += '<div class="verdict-card" style="border-left-color:' + wpColor + '">';
+    html += '<div class="verdict-label">🐋 WHALE PIVOT' + (isActive ? '' : ' (HISTORICAL)') + '</div>';
+    html += '<div class="verdict-main" style="color:' + wpColor + '">' + pivotData.signal + '</div>';
+    html += '<div class="verdict-sub">Conviction: ' + ((pivotData.conviction || 0) * 100).toFixed(0) + '%';
+
+    // Age of the pivot
+    if (pivotData.timestamp || pivotData.updated_at) {
+      const pivotAge = ago(pivotData.timestamp || pivotData.updated_at);
+      if (pivotAge) html += ' · <span style="color:#484f58">' + pivotAge + '</span>';
+    }
+    html += '</div>';
+
+    if (wp.entry_zone) {
+      html += '<div class="verdict-sub">Entry: $' + fmt(wp.entry_zone) + ' · Stop: $' + fmt(wp.stop_zone) + '</div>';
+    }
+
+    // Distance from current price to pivot level
+    const pivotPrice = pivotData.price || wp.entry_zone;
+    if (pivotPrice && d.price) {
+      const distPct = ((d.price - pivotPrice) / pivotPrice * 100);
+      const distColor = pivotData.signal === 'LONG' ? (distPct > 0 ? '#3fb950' : '#f85149') : (distPct < 0 ? '#3fb950' : '#f85149');
+      html += '<div class="verdict-sub">Now $' + fmt(d.price) + ' (<span style="color:' + distColor + '">' + (distPct >= 0 ? '+' : '') + distPct.toFixed(1) + '%</span> from pivot)</div>';
+    }
+
+    // Checklist details (like 4-layer bullets)
+    if (checklistTotal > 0) {
+      html += '<div style="margin-top:8px;font-size:11px;color:#484f58">';
+      html += '<div style="margin-bottom:4px">Checklist: <span style="color:#f0f6fc;font-weight:600">' + checklistScore + '/' + checklistTotal + '</span></div>';
+      for (const k of checklistKeys) {
+        const passed = checklist[k];
+        const label = checklistLabels[k] || k;
+        const color = passed ? '#3fb950' : '#f85149';
+        const icon = passed ? ' ✓' : ' ✗';
+        html += '<div style="padding:1px 0"><span style="color:' + color + ';font-weight:600">' + label + icon + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // ── GetClaw Verdict ────────────────────────────────────
+  // Shows when brief is ready (verdict pipeline active)
+  const briefReady = d.getclaw_brief_ready;
+  if (briefReady) {
+    html += '<div class="verdict-card" style="border-left-color:#d2a8ff">';
+    html += '<div class="verdict-label">🦀 GETCLAW VERDICT</div>';
+    html += '<div class="verdict-main" style="color:#d2a8ff">Brief Ready</div>';
+    html += '<div class="verdict-sub">Data packet sent to GetClaw — awaiting analysis</div>';
+    html += '</div>';
+  }
+
+  // ── 4-Layer MTF Alignment Card ─────────────────────────
+  const fl = d['4layer'] || {};
+  const layers = fl.layers || {};
+  const regime = fl.regime || {};
+  const alignment = fl.alignment || {};
+  const warmup = fl.warmup || {};
+  const ft15 = layers['15m'] || {};
+  const ft1H = layers['1H'] || {};
+  const ft4H = layers['4H'] || {};
+  const ft1D = layers['1D'];
+
+  const tfList = [
+    { label: '1D', data: ft1D, warmupStatus: warmup['1D'] },
+    { label: '4H', data: ft4H, warmupStatus: warmup['4H'] },
+    { label: '1H', data: ft1H, warmupStatus: warmup['1H'] },
+    { label: '15m', data: ft15, warmupStatus: null },
+  ];
+
+  function dirIcon(tfData) {
+    if (!tfData) return { arrow: '∘', color: '#484f58', label: '?' };
+    const d = tfData.direction || (tfData.signal ? (tfData.signal === 'LONG' ? 'BULLISH' : 'BEARISH') : null);
+    if (!d) return { arrow: '→', color: '#8b949e', label: '—' };
+    if (d === 'BULLISH' || d === 'LONG') return { arrow: '▲', color: '#3fb950', label: 'BULL' };
+    if (d === 'BEARISH' || d === 'SHORT') return { arrow: '▼', color: '#f85149', label: 'BEAR' };
+    return { arrow: '→', color: '#d29922', label: 'NEUT' };
+  }
+
+  function warmupDot(s) {
+    if (s === 'active') return '<span style="color:#3fb950">●</span>';
+    if (s === 'warming_up') return '<span style="color:#d29922">◌</span>';
+    return '<span style="color:#484f58">○</span>';
+  }
+
+  const alVerdict = alignment.verdict || '—';
+  const alSize = alignment.size || '—';
+  const alConsensus = alignment.consensus || '—';
+  const alAgree = alignment.agree_count ?? '—';
+  const alTotal = alignment.total_layers ?? '—';
+  const fibZone = alignment.fib_zone || {};
+  const zoneStatus = alignment.zone_status || '—';
+  const alDetail = alignment.detail || [];
+
+  const regLabel = regime.regime || '—';
+  const regAdx = regime.adx;
+  const regDetail = regime.detail || '';
+
+  // Color the verdict
+  let vColor = '#8b949e';
+  if (alVerdict.includes('BULLISH') || alVerdict.includes('MAX') || alVerdict.includes('LONG')) vColor = '#3fb950';
+  else if (alVerdict.includes('BEARISH') || alVerdict.includes('SHORT')) vColor = '#f85149';
+ else if (alVerdict.includes('SCALP')) vColor = '#d29922';  // NEUTRAL_SCALP gets amber (caution), BEARISH/BULLISH_SCALP already handled above
+
+  // Size box color
+  let szColor = '#8b949e';
+  if (alSize === 'NORMAL') szColor = '#d29922';
+  else if (alSize === 'MAX') szColor = '#3fb950';
+  else if (alSize === 'SCALP') szColor = '#d29922';
+
+  html += '<div class="verdict-card" style="border-left-color:' + vColor + '">';
+  html += '<div class="verdict-label">🧩 4-LAYER MTF ALIGNMENT</div>';
+  html += '<div class="verdict-main" style="color:' + vColor + '">' + alVerdict + '</div>';
+  html += '<div class="verdict-sub">Consensus: ' + alConsensus + ' (' + alAgree + '/' + alTotal + ' layers) · Size: <span style="color:' + szColor + ';font-weight:700">' + alSize + '</span></div>';
+
+  // Timeframe direction table
+  html += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
+  for (const tf of tfList) {
+    const ic = dirIcon(tf.data);
+    const wd = tf.warmupStatus ? warmupDot(tf.warmupStatus) : '';
+    const conv = tf.data && tf.data.conviction ? (tf.data.conviction * 100).toFixed(0) + '%' : (tf.data ? '—' : '');
+    html += '<div class="tf-box">';
+    html += '<div style="font-size:12px;color:#484f58;margin-bottom:2px">' + tf.label + ' ' + wd + '</div>';
+    html += '<div style="font-size:22px;font-weight:700;color:' + ic.color + '">' + ic.arrow + '</div>';
+    html += '<div style="font-size:10px;color:' + ic.color + '">' + ic.label + '</div>';
+    if (conv) html += '<div style="font-size:10px;color:#8b949e">' + conv + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Regime + ADX
+  html += '<div style="display:flex;gap:8px;margin-top:8px">';
+  html += '<div class="row" style="flex:1;border:none"><span class="label">Regime</span><span class="val">' + regLabel + '</span></div>';
+  html += '<div class="row" style="flex:1;border:none"><span class="label">ADX</span><span class="val">' + (regAdx != null ? regAdx.toFixed(1) : '—') + '</span></div>';
+  html += '</div>';
+
+  // Fibonacci zone
+  if (fibZone.valid) {
+    html += '<div class="row"><span class="label">Fib Entry Zone</span><span class="val" style="color:#d2a8ff">✅ Active</span></div>';
+  } else {
+    const fibReason = fibZone.reason || '—';
+    html += '<div class="row"><span class="label">Fib Entry Zone</span><span class="val" style="color:#484f58">' + fibReason + '</span></div>';
+  }
+
+  // Warmup progress
+  if (warmup.history_len != null) {
+    const needed = Math.max(warmup.needed_1D || 0, 1);
+    const total1D = Math.max(warmup.history_len, needed);
+    const pct = Math.min(100, Math.round((warmup.history_len / total1D) * 100));
+    html += '<div class="row"><span class="label">Warmup</span><span class="val" style="color:' + (warmup['1D'] === 'active' ? '#3fb950' : '#d29922') + '">' + warmup.history_len + '/' + total1D + ' candles (' + pct + '%)</span></div>';
+  }
+
+  // Detail bullets
+  if (alDetail.length > 0) {
+    html += '<div style="margin-top:6px;font-size:11px;color:#484f58">';
+    for (const det of alDetail) {
+      const dc = det.dir === 'BULLISH' ? '#3fb950' : det.dir === 'BEARISH' ? '#f85149' : '#8b949e';
+      html += '<div style="padding:2px 0"><span style="color:' + dc + ';font-weight:600">' + det.label + '</span> ' + det.dir + (det.active ? ' ✓' : '') + '</div>';
+    }
+    html += '</div>';
+  }
+
+  if (regDetail) {
+    html += '<div style="margin-top:6px;font-size:11px;color:#484f58">' + regDetail + '</div>';
+  }
+
+  html += '</div>';
+
   // Price
   html += '<div class="price-row">';
   html += '<span class="price">$' + fmt(d.price) + '</span>';
@@ -121,6 +462,40 @@ function render(d) {
 
   // Status
   html += '<div class="status ' + sc + '"><span class="status-dot"></span>' + sl + '</div>';
+
+  // Plain English — for beginners
+  const pe = d.plain_english;
+  if (pe) {
+    html += '<div class="simple-terms">' + pe + '</div>';
+  }
+
+  // ── Tape Pressure Meter ───────────────────────────────
+  const aggScore2 = agg.score ?? 0.5;
+  const aggDir2 = agg.direction || 'neutral';
+  const nd2 = f.net_delta ?? 0;
+  // Pressure = score × direction sign, mapped to -1..+1
+  let pressure = 0;
+  if (aggDir2 === 'short') pressure = -aggScore2;
+  else if (aggDir2 === 'long') pressure = aggScore2;
+  else pressure = (nd2 > 0 ? 0.1 : nd2 < 0 ? -0.1 : 0);
+  const pct = Math.round((pressure + 1) / 2 * 100);  // 0-100%
+  const pColor = pressure < -0.1 ? '#f85149' : pressure > 0.1 ? '#3fb950' : '#8b949e';
+  html += '<div class="tape-meter">';
+  html += '<div class="tape-labels"><span>SELLERS</span><span>BUYERS</span></div>';
+  html += '<div class="tape-bar"><div class="tape-fill" style="width:' + pct + '%;background:' + pColor + '"></div></div>';
+  html += '<div class="tape-marker" style="left:' + pct + '%">●</div>';
+  html += '</div>';
+
+  // Balance state
+  const bs = d.balance_state || 'UNKNOWN';
+  const aggScore3 = agg.score ?? 0.5;
+  let bsLabel;
+  if (bs === 'TIGHT_BALANCE' && aggScore3 >= 0.55) {
+    bsLabel = 'Active — directional pressure';
+  } else {
+    bsLabel = {'TIGHT_BALANCE':'Tight — coiling','DEVELOPING_BALANCE':'Developing','BREAKOUT_UP':'Breakout Up','BREAKDOWN':'Breakdown'}[bs] || bs;
+  }
+  html += '<div class="timeframe" style="margin-top:4px">Auction: ' + bsLabel + '</div>';
 
   // Balance zones
   html += '<h2>Auction Range</h2>';
@@ -132,10 +507,10 @@ function render(d) {
 
   // Candle timeframe
   const candleStart = f.candle_start;
-  if (candleStart) {
+  if (candleStart && !isNaN(new Date(candleStart).getTime())) {
     const start = new Date(candleStart);
     const end = new Date(start.getTime() + 15 * 60 * 1000);
-    const tf = start.toISOString().substr(11, 5) + '–' + end.toISOString().substr(11, 5) + ' UTC';
+    const tf = start.toISOString().slice(11, 16) + '–' + end.toISOString().slice(11, 16) + ' UTC';
     const kind = f.full_candle ? 'Full candle' : 'Partial';
     const trades = f.trade_count ? f.trade_count + ' trades' : '';
     html += '<div class="timeframe">15-Minute Candle · ' + tf + ' · ' + kind + (trades ? ' · ' + trades : '') + '</div>';
@@ -146,15 +521,19 @@ function render(d) {
 
   // Footprint levels
   const levels = f.levels || [];
+  const hvn = f.hvn_zones || [];
   html += '<h2>Footprint Levels</h2>';
+  if (hvn.length) {
+    html += '<div class="timeframe">HVN zones: $' + hvn.map(p => fmt(p)).join(' · $') + '</div>';
+  }
   if (levels.length === 0) {
     html += '<div class="empty">Accumulating data...</div>';
   } else {
     const maxVol = Math.max(...levels.map(l => l.buy + l.sell), 1);
     html += '<div class="fp-header"><span>Price</span><span></span><span>Buy / Sell</span></div>';
     for (const l of levels) {
-      const buyerDom = l.buy > l.sell;
-      const cls = buyerDom ? 'buyer-dominant' : 'seller-dominant';
+      const buyerDom = l.buy >= l.sell;
+      const cls = buyerDom ? 'buyer-dominant' : (l.buy === 0 && l.sell === 0 ? '' : 'seller-dominant');
       const buyPct = (l.buy / maxVol * 100).toFixed(0);
       const sellPct = (l.sell / maxVol * 100).toFixed(0);
       html += '<div class="fp-row ' + cls + '">';
@@ -170,10 +549,19 @@ function render(d) {
 
   // Data row
   html += '<h2>Data</h2>';
+  const aggScoreVal = agg.score != null ? agg.score.toFixed(2) : '—';
+  const aggDirVal = agg.direction || 'neutral';
+  const aggMet = agg.threshold_met ? ' ✓' : '';
+  const aggColor = aggDirVal === 'long' ? '#3fb950' : aggDirVal === 'short' ? '#f85149' : '#8b949e';
+  const aggDisplay = aggDirVal === 'short' ? 'SELLER BIAS' : aggDirVal === 'long' ? 'BUYER BIAS' : aggDirVal.toUpperCase();
+  html += '<div class="row"><span class="label">Aggression Score</span><span class="val" style="color:' + aggColor + '">' + aggScoreVal + ' ' + aggDisplay + aggMet + '</span></div>';
   html += '<div class="row"><span class="label">Net Delta</span><span class="val">' + (f.net_delta?.toFixed(2) ?? '—') + ' BTC</span></div>';
   html += '<div class="row"><span class="label">Delta Flip</span><span class="val">' + (f.delta_flip ? 'Buyer controlled' : 'Seller controlled') + '</span></div>';
   html += '<div class="row"><span class="label">CVD</span><span class="val">' + fmt(cvd) + ' BTC</span></div>';
   html += '<div class="row"><span class="label">Funding Rate</span><span class="val">' + (d.funding_rate != null ? (d.funding_rate * 100).toFixed(4) + '%' : '—') + '</span></div>';
+  html += '<div class="row"><span class="label">Spot/Perp Basis</span><span class="val">' + (d.basis != null ? (d.basis >= 0 ? '+' : '') + d.basis.toFixed(2) + '%' : '—') + '</span></div>';
+  html += '<div class="row"><span class="label">Taker Buy/Sell</span><span class="val">' + (d.taker_ratio != null ? 'Buy ' + (d.taker_ratio*100).toFixed(0) + '% / Sell ' + ((1-d.taker_ratio)*100).toFixed(0) + '%' : '—') + '</span></div>';
+  html += '<div class="row"><span class="label">OI Change (1h)</span><span class="val">' + (d.oi_change != null ? (d.oi_change >= 0 ? '+' : '') + d.oi_change.toFixed(2) + '%' : '—') + (d.oi_change_dir && d.oi_change_dir !== 'flat' ? ' (' + d.oi_change_dir + ')' : '') + '</span></div>';
   html += '<div class="row"><span class="label">Absorption</span><span class="val">' + (f.absorption_level ? '$' + fmt(f.absorption_level.price) : '—') + '</span></div>';
   html += '<div class="row"><span class="label">Window</span><span class="val">' + (f.window_seconds || '—') + 's</span></div>';
   html += '<div class="row"><span class="label">Full Candle</span><span class="val">' + (f.full_candle ? 'Yes' : 'No') + '</span></div>';
@@ -194,6 +582,21 @@ function render(d) {
   }
 
   html += '<div class="footer">AMT + Footprint · ' + (d.generated_at || '') + '</div>';
+
+  // ── Bottom Signal Breakdown ───────────────────────────
+  html += '<h2>SIGNAL BREAKDOWN</h2>';
+  for (const sig of verdict.signals) {
+    const sc = sig.dir === 'bearish' ? '#f85149' : sig.dir === 'bullish' ? '#3fb950' : '#8b949e';
+    html += '<div class="row">';
+    html += '<span class="label">' + sig.name + '</span>';
+    html += '<span class="val" style="color:' + sc + '">' + sig.value + '</span>';
+    html += '</div>';
+  }
+  html += '<div class="row" style="border-top:1px solid #30363d;margin-top:4px;padding-top:8px">';
+  html += '<span class="label"></span>';
+  html += '<span class="val">' + verdict.bearish + ' bearish · ' + verdict.bullish + ' bullish · ' + verdict.neut + ' neutral</span>';
+  html += '</div>';
+
   document.getElementById('app').innerHTML = html;
 }
 
