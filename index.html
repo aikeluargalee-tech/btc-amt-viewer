@@ -30,6 +30,7 @@ h2{font-size:14px;color:#8b949e;margin:16px 0 6px;text-transform:uppercase;lette
 .zone-item{text-align:center}
 .zone-item .zl{font-size:10px;color:#8b949e;margin-bottom:2px}
 .zone-item .zv{font-size:18px;font-weight:700;color:#f0f6fc}
+.timeframe{text-align:center;font-size:11px;color:#484f58;margin-bottom:8px;padding:4px 0}
 .fp-header{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;color:#484f58;border-bottom:1px solid #21262d}
 .fp-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;border-bottom:1px solid #0d1117}
 .fp-row.buyer-dominant{background:#0d3320}
@@ -127,6 +128,17 @@ function render(d) {
   html += '<div class="zone-item"><div class="zl">High-Vol Node</div><div class="zv">$' + fmt(b.poc) + '</div></div>';
   html += '<div class="zone-item"><div class="zl">Ceiling</div><div class="zv">$' + fmt(b.ceiling_48h) + '</div></div>';
   html += '</div>';
+
+  // Candle timeframe
+  const candleStart = f.candle_start;
+  if (candleStart) {
+    const start = new Date(candleStart);
+    const end = new Date(start.getTime() + 15 * 60 * 1000);
+    const tf = start.toISOString().substr(11, 5) + '–' + end.toISOString().substr(11, 5) + ' UTC';
+    const kind = f.full_candle ? 'Full candle' : 'Partial';
+    const trades = f.trade_count ? f.trade_count + ' trades' : '';
+    html += '<div class="timeframe">15-Minute Candle · ' + tf + ' · ' + kind + (trades ? ' · ' + trades : '') + '</div>';
+  }
 
   // Footprint levels
   const levels = f.levels || [];

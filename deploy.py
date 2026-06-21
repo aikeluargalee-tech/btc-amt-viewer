@@ -59,6 +59,8 @@ def trim_feed(feed):
         },
 
         "footprint": {
+            "candle_start":     footprint.get("candle_start"),
+            "trade_count":      footprint.get("trade_count"),
             "levels":           levels,
             "net_delta":        footprint.get("net_delta"),
             "delta_flip":       footprint.get("delta_flip"),
