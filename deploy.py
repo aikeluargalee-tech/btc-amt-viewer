@@ -204,6 +204,7 @@ def trim_feed(feed):
         "whale_pivot": feed.get("whale_pivot", {}),
         "last_whale_pivot": _last_pivot_from_log(),
         "getclaw_brief_ready": feed.get("getclaw_brief_ready", False),
+        "snapshot_updated_at": feed.get("4layer", {}).get("updated_at"),
     }
 
     data["bottomline"] = generate_bottomline(data)
