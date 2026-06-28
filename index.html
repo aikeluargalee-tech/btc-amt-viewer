@@ -258,12 +258,33 @@ function render(d) {
 
   let html = '';
 
+  // ── Price (first thing beginners see) ──────────────
+  html += '<div class="price-row">';
+  html += '<span class="price">$' + fmt(d.price) + '</span>';
+  html += '<span class="change ' + (d.change_24h_pct >= 0 ? 'up' : 'down') + '">' + fmtPct(d.change_24h_pct) + '</span>';
+  html += '</div>';
+  html += '<div class="updated">' + ago(d.generated_at) + ' · Next ' + (() => {
+    const g = new Date(d.generated_at);
+    if (isNaN(g.getTime())) return '—';
+    g.setSeconds(g.getSeconds() + REFRESH_SEC);
+    return g.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' UTC';
+  })() + '</div>';
+
+  // ── Status ────────────────────────────────────────
+  html += '<div class="status ' + sc + '"><span class="status-dot"></span>' + sl + '</div>';
+
+  // ── Plain English — beginner's summary ────────────
+  const pe = d.plain_english;
+  if (pe) {
+    html += '<div class="simple-terms">💡 ' + pe + '</div>';
+  }
+
   // ── Top Verdict Card ──────────────────────────────────
   const verdict = scoreSignals(d);
   html += '<div class="verdict-card" style="border-left-color:' + verdict.verdictColor + '">';
-  html += '<div class="verdict-label">AMT VERDICT</div>';
+  html += '<div class="verdict-label">MARKET BIAS</div>';
   html += '<div class="verdict-main" style="color:' + verdict.verdictColor + '">' + verdict.verdict + '</div>';
-  html += '<div class="verdict-sub">' + verdict.bearish + ' bearish · ' + verdict.bullish + ' bullish · ' + verdict.neut + ' neutral</div>';
+  html += '<div class="verdict-sub">' + verdict.bearish + ' bearish · ' + verdict.bullish + ' bullish · ' + verdict.neut + ' neutral signals</div>';
   html += '</div>';
 
   // ── Whale Pivot Card ───────────────────────────────────
@@ -396,9 +417,16 @@ function render(d) {
   else if (alSize === 'SCALP') szColor = '#d29922';
 
   html += '<div class="verdict-card" style="border-left-color:' + vColor + '">';
-  html += '<div class="verdict-label">🧩 4-LAYER MTF ALIGNMENT</div>';
+  html += '<div class="verdict-label">🧩 MULTI-TIMEFRAME SIGNAL' + (() => {
+    const snapAge = d.snapshot_updated_at ? ago(d.snapshot_updated_at) : '';
+    if (!snapAge) return '';
+    const mins = Math.max(0, (Date.now() - new Date(d.snapshot_updated_at).getTime()) / 60000);
+    const staleClass = mins > 10 ? ' style="color:#f85149"' : ' style="color:#484f58"';
+    return ' <span' + staleClass + '>· snapshot ' + snapAge + '</span>';
+  })() + '</div>';
+
   html += '<div class="verdict-main" style="color:' + vColor + '">' + alVerdict + '</div>';
-  html += '<div class="verdict-sub">Consensus: ' + alConsensus + ' (' + alAgree + '/' + alTotal + ' layers) · Size: <span style="color:' + szColor + ';font-weight:700">' + alSize + '</span></div>';
+  html += '<div class="verdict-sub">' + alAgree + ' of ' + alTotal + ' timeframes agree · Position: <span style="color:' + szColor + ';font-weight:700">' + alSize + '</span></div>';
 
   // Timeframe direction table
   html += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
@@ -453,22 +481,6 @@ function render(d) {
 
   html += '</div>';
 
-  // Price
-  html += '<div class="price-row">';
-  html += '<span class="price">$' + fmt(d.price) + '</span>';
-  html += '<span class="change ' + (d.change_24h_pct >= 0 ? 'up' : 'down') + '">' + fmtPct(d.change_24h_pct) + '</span>';
-  html += '</div>';
-  html += '<div class="updated">' + ago(d.generated_at) + '</div>';
-
-  // Status
-  html += '<div class="status ' + sc + '"><span class="status-dot"></span>' + sl + '</div>';
-
-  // Plain English — for beginners
-  const pe = d.plain_english;
-  if (pe) {
-    html += '<div class="simple-terms">' + pe + '</div>';
-  }
-
   // ── Tape Pressure Meter ───────────────────────────────
   const aggScore2 = agg.score ?? 0.5;
   const aggDir2 = agg.direction || 'neutral';
@@ -498,7 +510,7 @@ function render(d) {
   html += '<div class="timeframe" style="margin-top:4px">Auction: ' + bsLabel + '</div>';
 
   // Balance zones
-  html += '<h2>Auction Range</h2>';
+  html += '<h2>Market Range</h2>';
   html += '<div class="zone-box">';
   html += '<div class="zone-item"><div class="zl">Floor</div><div class="zv">$' + fmt(b.floor_48h) + '</div></div>';
   html += '<div class="zone-item"><div class="zl">High-Vol Node</div><div class="zv">$' + fmt(b.poc) + '</div></div>';
@@ -522,7 +534,7 @@ function render(d) {
   // Footprint levels
   const levels = f.levels || [];
   const hvn = f.hvn_zones || [];
-  html += '<h2>Footprint Levels</h2>';
+  html += '<h2>Where Trading Happened</h2>';
   if (hvn.length) {
     html += '<div class="timeframe">HVN zones: $' + hvn.map(p => fmt(p)).join(' · $') + '</div>';
   }
@@ -548,7 +560,7 @@ function render(d) {
   }
 
   // Data row
-  html += '<h2>Data</h2>';
+  html += '<h2>Key Numbers</h2>';
   const aggScoreVal = agg.score != null ? agg.score.toFixed(2) : '—';
   const aggDirVal = agg.direction || 'neutral';
   const aggMet = agg.threshold_met ? ' ✓' : '';
@@ -568,7 +580,7 @@ function render(d) {
 
   // Large prints
   const prints = f.large_prints || [];
-  html += '<h2>Large Prints</h2>';
+  html += '<h2>Big Trades</h2>';
   if (prints.length === 0) {
     html += '<div class="empty">None in this window</div>';
   } else {
@@ -584,7 +596,7 @@ function render(d) {
   html += '<div class="footer">AMT + Footprint · ' + (d.generated_at || '') + '</div>';
 
   // ── Bottom Signal Breakdown ───────────────────────────
-  html += '<h2>SIGNAL BREAKDOWN</h2>';
+  html += '<h2>What\'s Driving This Signal</h2>';
   for (const sig of verdict.signals) {
     const sc = sig.dir === 'bearish' ? '#f85149' : sig.dir === 'bullish' ? '#3fb950' : '#8b949e';
     html += '<div class="row">';
